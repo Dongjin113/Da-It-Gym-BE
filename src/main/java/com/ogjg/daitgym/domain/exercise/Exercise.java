@@ -22,4 +22,8 @@ public class Exercise {
 
     @Column(unique = true)
     private String name;
+
+    public Exercise(String name) {
+        this.name = name;
+    }
 }

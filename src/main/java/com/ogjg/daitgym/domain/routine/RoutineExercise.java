@@ -31,6 +31,7 @@ public class RoutineExercise extends BaseEntity {
     @JoinColumn(name = "exercise_id")
     private Exercise exercise;
 
+    @Column(name = "days")
     private int day;
 
     private int setCount;

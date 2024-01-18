@@ -15,6 +15,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Getter
 @Entity
 @NoArgsConstructor(access = PROTECTED)
+@Table(name = "days")
 public class Day {
 
     @Id

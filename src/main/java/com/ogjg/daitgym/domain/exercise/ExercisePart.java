@@ -22,4 +22,9 @@ public class ExercisePart {
     private Exercise exercise;
 
     private String part;
+
+    public ExercisePart(Exercise exercise, String part) {
+        this.exercise = exercise;
+        this.part = part;
+    }
 }
