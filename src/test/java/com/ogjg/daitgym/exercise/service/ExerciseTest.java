@@ -4,6 +4,7 @@ import com.ogjg.daitgym.common.exception.ErrorCode;
 import com.ogjg.daitgym.common.exception.exercise.NotFoundExercise;
 import com.ogjg.daitgym.domain.exercise.Exercise;
 import com.ogjg.daitgym.domain.exercise.ExercisePart;
+import com.ogjg.daitgym.exercise.dto.response.ExerciseListResponse;
 import com.ogjg.daitgym.exercise.repository.ExercisePartRepository;
 import com.ogjg.daitgym.exercise.repository.ExerciseRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -32,24 +33,31 @@ class ExerciseTest {
     private ExercisePartRepository exercisePartRepository;
 
     @Autowired
+    private ExerciseService exerciseService;
+
+    @Autowired
     private ExerciseHelper exerciseHelper;
 
     private ExercisePart exercisePart;
     private Exercise exercise;
 
+    private final String exerciseName1 = "걷기";
+    private final String exerciseName2 = "뛰기";
+    private final String exercisePartName = "유산소";
+
     @BeforeEach
     void beforeEachTest() {
         exercise = exerciseRepository.save(
-                new Exercise("걷기"));
+                new Exercise(exerciseName1));
         exercisePart = exercisePartRepository.save(
-                new ExercisePart(exercise, "유산소"));
+                new ExercisePart(exercise, exercisePartName));
     }
 
     @Test
     @DisplayName("운동이름으로 운동찾기")
     void findExerciseByName() {
-        Exercise findExercise = exerciseHelper.findExercise("걷기");
-        assertThat(findExercise.getName()).isEqualTo("걷기");
+        Exercise findExercise = exerciseHelper.findExercise(exerciseName1);
+        assertThat(findExercise.getName()).isEqualTo(exerciseName1);
     }
 
     @Test
@@ -64,7 +72,7 @@ class ExerciseTest {
     @DisplayName("운동ID로 운동찾기")
     void findExerciseById() {
         Exercise findExercise = exerciseHelper.findExercise(exercise.getId());
-        assertThat(findExercise.getName()).isEqualTo("걷기");
+        assertThat(findExercise.getName()).isEqualTo(exerciseName1);
     }
 
     @Test
@@ -79,22 +87,43 @@ class ExerciseTest {
     @DisplayName("운동으로 운동부위 찾기")
     void findExerciseByExercisePart() {
         assertThat(exerciseHelper.findExercisePartByExercise(exercise))
-                .isEqualTo("유산소");
+                .isEqualTo(exercisePartName);
     }
 
     @Test
     @DisplayName("운동부위로 운동 찾기")
     void findExercisePartByExercise() {
         Exercise exercise1 = exerciseRepository.save(new Exercise("줄넘기"));
-        exercisePartRepository.save(new ExercisePart(exercise1, "유산소"));
+        exercisePartRepository.save(new ExercisePart(exercise1, exercisePartName));
 
         List<ExercisePart> exerciseLists = exerciseHelper.findExerciseListsByPart(exercisePart.getPart());
         assertThat(exerciseLists).hasSize(2);
         assertThat(exerciseLists).extracting("exercise.name").contains("줄넘기");
-        assertThat(exerciseLists).extracting("exercise.name").contains("걷기");
+        assertThat(exerciseLists).extracting("exercise.name").contains(exerciseName1);
         assertThat(exerciseLists).hasSize(2)
                 .extracting("exercise")
                 .extracting("name")
-                .containsExactly("걷기", "줄넘기");
+                .containsExactly(exerciseName1, "줄넘기");
+    }
+
+    @Test
+    @DisplayName("운동 부위명으로 부위별 운동정보 가져오기")
+    public void serviceTest(){
+        Exercise exercise1 = exerciseRepository.save(
+                new Exercise(exerciseName2));
+        exercisePartRepository.save(
+                new ExercisePart(exercise1, exercisePartName));
+        Exercise exercise2 = exerciseRepository.save(
+                new Exercise("푸시 업"));
+        exercisePartRepository.save(
+                new ExercisePart(exercise2, "가슴"));
+
+        ExerciseListResponse exerciseList = exerciseService.exerciseLists(exercisePartName);
+
+        assertThat(exerciseList.getExercises()).hasSize(2);
+        assertThat(exerciseList.getExercises().get(0).getExerciseName()).isEqualTo(exerciseName1);
+        assertThat(exerciseList.getExercises().get(0).getExercisePart()).isEqualTo(exercisePartName);
+        assertThat(exerciseList.getExercises().get(1).getExerciseName()).isEqualTo(exerciseName2);
+        assertThat(exerciseList.getExercises().get(1).getExercisePart()).isEqualTo(exercisePartName);
     }
 }

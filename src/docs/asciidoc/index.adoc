@@ -1,0 +1,13 @@
+= Da-It-Gym Project API 문서
+:toc: left
+:source-highlighter: highlightjs
+:sectlinks:
+
+== 운동 API
+
+=== 부위별 운동 목록 조회
+운동부위를 통해서 운동 목록을 검색해 옵니다
+
+include::{snippets}/part-exercises/path-parameters.adoc[]
+include::{snippets}/part-exercises/response-body.adoc[]
+
