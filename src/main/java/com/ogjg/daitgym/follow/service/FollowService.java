@@ -2,7 +2,6 @@ package com.ogjg.daitgym.follow.service;
 
 import com.ogjg.daitgym.common.exception.follow.AlreadyFollowUser;
 import com.ogjg.daitgym.common.exception.follow.NotFoundFollow;
-import com.ogjg.daitgym.common.exception.user.NotFoundUser;
 import com.ogjg.daitgym.domain.Inbody;
 import com.ogjg.daitgym.domain.User;
 import com.ogjg.daitgym.domain.follow.Follow;
@@ -11,30 +10,28 @@ import com.ogjg.daitgym.follow.dto.response.FollowListDto;
 import com.ogjg.daitgym.follow.dto.response.FollowListResponse;
 import com.ogjg.daitgym.follow.repository.FollowRepository;
 import com.ogjg.daitgym.user.repository.InbodyRepository;
-import com.ogjg.daitgym.user.repository.UserRepository;
+import com.ogjg.daitgym.user.service.UserHelper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FollowService {
 
     private final FollowRepository followRepository;
-    private final UserRepository userRepository;
     private final InbodyRepository inbodyRepository;
+    private final UserHelper userHelper;
 
     /**
      * 팔로우
      */
     @Transactional
     public void follow(String email, String targetNickname) {
-        User user = findUserByEmail(email);
-        User targetUser = findUserByNickName(targetNickname);
+        User user = userHelper.findUserByEmail(email);
+        User targetUser = userHelper.findUserByNickname(targetNickname);
 
         if (user.getEmail().equals(targetUser.getEmail())) {
             throw new AlreadyFollowUser("자신은 팔로우 할 수 없습니다");
@@ -55,7 +52,7 @@ public class FollowService {
      */
     @Transactional
     public void unfollow(String email, String targetNickname) {
-        User targetUser = findUserByNickName(targetNickname);
+        User targetUser = userHelper.findUserByNickname(targetNickname);
         Follow.PK followPK = Follow.createFollowPK(targetUser.getEmail(), email);
         findFollowByFollowPK(followPK);
         followRepository.deleteById(followPK);
@@ -66,7 +63,7 @@ public class FollowService {
      */
     @Transactional(readOnly = true)
     public FollowCountResponse followerCount(String nickname) {
-        User user = findUserByNickName(nickname);
+        User user = userHelper.findUserByNickname(nickname);
         int followerCount = followRepository.countByFollowPKTargetEmail(user.getEmail());
 
         return new FollowCountResponse(followerCount);
@@ -77,7 +74,7 @@ public class FollowService {
      */
     @Transactional(readOnly = true)
     public FollowCountResponse followingCount(String nickname) {
-        User user = findUserByNickName(nickname);
+        User user = userHelper.findUserByNickname(nickname);
         int followingCount = followRepository.countByFollowPKFollowerEmail(user.getEmail());
 
         return new FollowCountResponse(followingCount);
@@ -88,7 +85,7 @@ public class FollowService {
      */
     @Transactional(readOnly = true)
     public FollowListResponse followingList(String nickname) {
-        User user = findUserByNickName(nickname);
+        User user = userHelper.findUserByNickname(nickname);
         List<FollowListDto> followingList = followRepository.followingList(nickname);
 
         followingList.forEach(
@@ -105,7 +102,7 @@ public class FollowService {
      */
     @Transactional(readOnly = true)
     public FollowListResponse followerList(String nickname) {
-        User user = findUserByNickName(nickname);
+        User user = userHelper.findUserByNickname(nickname);
         List<FollowListDto> followerList = followRepository.followerList(nickname);
 
         followerList.forEach(
@@ -123,34 +120,18 @@ public class FollowService {
      * @return
      */
     private int userLatestInbodyScore(String email) {
-            return inbodyRepository.findFirstByUserEmailOrderByCreatedAtDesc(email)
-                    .map(Inbody::getScore)
-                    .orElse(0);
-    }
-
-    /**
-     * 이메일로 유저 찾기
-     */
-    private User findUserByEmail(String email) {
-        return userRepository.findById(email)
-                .orElseThrow(NotFoundUser::new);
-    }
-
-    /**
-     * 닉네임으로 유저 찾기
-     */
-    private User findUserByNickName(String nickname) {
-        return userRepository.findByNickname(nickname)
-                .orElseThrow(NotFoundUser::new);
+        return inbodyRepository.findFirstByUserEmailOrderByCreatedAtDesc(email)
+                .map(Inbody::getScore)
+                .orElse(0);
     }
 
     /**
      * Follow 찾기
      */
-    private void findFollowByFollowPK(
+    private Follow findFollowByFollowPK(
             Follow.PK followPk
     ) {
-        followRepository.findById(followPk)
+        return followRepository.findById(followPk)
                 .orElseThrow(NotFoundFollow::new);
     }
 }

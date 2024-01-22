@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 @SpringBootTest
-@Transactional
 class ExerciseTest {
 
     @Autowired
@@ -46,6 +45,7 @@ class ExerciseTest {
     private final String exercisePartName = "유산소";
 
     @BeforeEach
+    @Transactional
     void beforeEachTest() {
         exercise = exerciseRepository.save(
                 new Exercise(exerciseName1));
@@ -55,6 +55,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("운동이름으로 운동찾기")
+    @Transactional
     void findExerciseByName() {
         Exercise findExercise = exerciseHelper.findExercise(exerciseName1);
         assertThat(findExercise.getName()).isEqualTo(exerciseName1);
@@ -62,6 +63,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("[Exception] 운동이 존재하지 않을때 운동이름으로 운동찾기")
+    @Transactional
     void findExerciseByNameThrowException() {
         assertThatThrownBy(() -> exerciseHelper.findExercise("걷기1"))
                 .isInstanceOf(NotFoundExercise.class)
@@ -70,6 +72,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("운동ID로 운동찾기")
+    @Transactional
     void findExerciseById() {
         Exercise findExercise = exerciseHelper.findExercise(exercise.getId());
         assertThat(findExercise.getName()).isEqualTo(exerciseName1);
@@ -77,6 +80,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("[Exception] 운동이 존재하지 않을때 운동ID로 운동찾기")
+    @Transactional
     void findExerciseByIdThrowException() {
         assertThatThrownBy(() -> exerciseHelper.findExercise(-1L))
                 .isInstanceOf(NotFoundExercise.class)
@@ -85,6 +89,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("운동으로 운동부위 찾기")
+    @Transactional
     void findExerciseByExercisePart() {
         assertThat(exerciseHelper.findExercisePartByExercise(exercise))
                 .isEqualTo(exercisePartName);
@@ -92,6 +97,7 @@ class ExerciseTest {
 
     @Test
     @DisplayName("운동부위로 운동 찾기")
+    @Transactional
     void findExercisePartByExercise() {
         Exercise exercise1 = exerciseRepository.save(new Exercise("줄넘기"));
         exercisePartRepository.save(new ExercisePart(exercise1, exercisePartName));
@@ -108,7 +114,8 @@ class ExerciseTest {
 
     @Test
     @DisplayName("운동 부위명으로 부위별 운동정보 가져오기")
-    public void serviceTest(){
+    @Transactional
+    public void serviceTest() {
         Exercise exercise1 = exerciseRepository.save(
                 new Exercise(exerciseName2));
         exercisePartRepository.save(
@@ -125,5 +132,23 @@ class ExerciseTest {
         assertThat(exerciseList.getExercises().get(0).getExercisePart()).isEqualTo(exercisePartName);
         assertThat(exerciseList.getExercises().get(1).getExerciseName()).isEqualTo(exerciseName2);
         assertThat(exerciseList.getExercises().get(1).getExercisePart()).isEqualTo(exercisePartName);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("[성능 테스트] Redis를 통한 조회")
+    public void getExerciseListByRedis1() {
+        ExerciseListResponse exerciseLists = exerciseService.redisExerciseLists(exercisePartName);
+        assertThat(exerciseLists.getExercises().get(0).getExerciseName()).isEqualTo("걷기");
+        assertThat(exerciseLists.getExercises().get(0).getExercisePart()).isEqualTo("유산소");
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("[성능 테스트] DB를 통한 조회")
+    public void getExerciseListByRedis2() {
+        ExerciseListResponse exerciseLists = exerciseService.exerciseLists(exercisePartName);
+        assertThat(exerciseLists.getExercises().get(0).getExerciseName()).isEqualTo("걷기");
+        assertThat(exerciseLists.getExercises().get(0).getExercisePart()).isEqualTo("유산소");
     }
 }

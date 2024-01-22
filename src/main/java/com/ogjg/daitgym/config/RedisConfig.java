@@ -1,6 +1,7 @@
 package com.ogjg.daitgym.config;
 
 import com.ogjg.daitgym.chat.dto.ChatMessageDto;
+import com.ogjg.daitgym.exercise.dto.response.ExerciseListResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -33,6 +34,27 @@ public class RedisConfig {
         redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(String.class));
         return redisTemplate;
     }
+
+    @Bean
+    public RedisTemplate<String, ExerciseListResponse> redisTemplateExercise(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, ExerciseListResponse> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(connectionFactory);
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ExerciseListResponse.class));
+        return redisTemplate;
+    }
+
+
+
+//    @Bean
+//    public <T> RedisTemplate<String, T> redisTemplate(RedisConnectionFactory connectionFactory, Class<T> tClass) {
+//        RedisTemplate<String, T> redisTemplate = new RedisTemplate<>();
+//        redisTemplate.setConnectionFactory(connectionFactory);
+//
+//        redisTemplate.setKeySerializer(new StringRedisSerializer());
+//        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(tClass));
+//        return redisTemplate;
+//    }
 
     /**
      * Redis 에 메시지 내역을 저장하기 위한 RedisTemplate 을 설정
