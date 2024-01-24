@@ -75,7 +75,7 @@ public class ExerciseJournalService {
             ExerciseJournalCompleteRequest exerciseJournalCompleteRequest
     ) {
         exerciseJournalHelper.isAuthorizedForJournal(email, journalId);
-        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournalById(journalId);
+        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournal(journalId);
         exerciseJournalHelper.checkAllExerciseHistoriesCompleted(exerciseJournal);
         exerciseJournal.journalComplete(exerciseJournalCompleteRequest);
     }
@@ -121,7 +121,7 @@ public class ExerciseJournalService {
             feedJournalHelper.deleteFeedJournal(email, feedJournal.getId());
         }
 
-        List<ExerciseList> exerciseLists = exerciseJournalHelper.findExerciseListsByJournal(journal);
+        List<ExerciseList> exerciseLists = exerciseJournalHelper.findExerciseLists(journal);
         exerciseLists.forEach(exerciseHistoryRepository::deleteAllByExerciseList);
         exerciseListRepository.deleteAllByExerciseJournal(journal);
 
@@ -158,7 +158,7 @@ public class ExerciseJournalService {
      */
     @Transactional
     public void deleteExerciseList(String email, Long exerciseListId) {
-        ExerciseList exerciseList = exerciseJournalHelper.findExerciseListById(exerciseListId);
+        ExerciseList exerciseList = exerciseJournalHelper.findExerciseList(exerciseListId);
 
         exerciseJournalHelper.isAuthorizedForJournal(email, exerciseList.getExerciseJournal().getId());
 
@@ -172,7 +172,7 @@ public class ExerciseJournalService {
     @Transactional
     public ExerciseHistory createExerciseHistory(String email, ExerciseHistoryRequest exerciseHistoryRequest) {
 
-        ExerciseList exerciseList = exerciseJournalHelper.findExerciseListById(exerciseHistoryRequest.getId());
+        ExerciseList exerciseList = exerciseJournalHelper.findExerciseList(exerciseHistoryRequest.getId());
         exerciseJournalHelper.isAuthorizedForJournal(email, exerciseList.getExerciseJournal().getId());
 
         return exerciseHistoryRepository.save(
@@ -192,7 +192,7 @@ public class ExerciseJournalService {
         ExerciseJournal originalJournal = feedJournalHelper.findExerciseJournalByFeedJournalId(originalFeedJournalId);
         //쿼리를 한방에 가져오기
         exerciseJournalRepository.fetchCompleteExerciseJournalByJournalId(originalJournal.getId());
-        List<ExerciseList> originalExerciseLists = exerciseJournalHelper.findExerciseListsByJournal(originalJournal);
+        List<ExerciseList> originalExerciseLists = exerciseJournalHelper.findExerciseLists(originalJournal);
 
         ExerciseJournal replicatedUserJournal =
                 exerciseJournalHelper.getReplicatedExerciseJournal(replicationExerciseJournalRequest.getJournalDate(), email);
@@ -224,7 +224,7 @@ public class ExerciseJournalService {
             String email, Long exerciseListId,
             UpdateRestTimeRequest updateRestTimeRequest
     ) {
-        ExerciseList exerciseList = exerciseJournalHelper.findExerciseListById(exerciseListId);
+        ExerciseList exerciseList = exerciseJournalHelper.findExerciseList(exerciseListId);
         exerciseJournalHelper.isAuthorizedForJournal(email, exerciseList.getExerciseJournal().getId());
         exerciseList.changeRestTime(updateRestTimeRequest);
     }
@@ -234,7 +234,7 @@ public class ExerciseJournalService {
      */
     @Transactional
     public void deleteExerciseHistory(String email, Long exerciseHistoryId) {
-        ExerciseHistory exerciseHistory = exerciseJournalHelper.findExerciseHistoryById(exerciseHistoryId);
+        ExerciseHistory exerciseHistory = exerciseJournalHelper.findExerciseHistory(exerciseHistoryId);
 
         exerciseJournalHelper.isAuthorizedForJournal(
                 email,
@@ -254,7 +254,7 @@ public class ExerciseJournalService {
             String email, Long exerciseHistoryId,
             UpdateExerciseHistoryRequest updateExerciseHistoryRequest
     ) {
-        ExerciseHistory exerciseHistory = exerciseJournalHelper.findExerciseHistoryById(exerciseHistoryId);
+        ExerciseHistory exerciseHistory = exerciseJournalHelper.findExerciseHistory(exerciseHistoryId);
 
         exerciseJournalHelper.isAuthorizedForJournal(email, exerciseHistory.getExerciseList().getExerciseJournal().getId());
 
@@ -271,10 +271,10 @@ public class ExerciseJournalService {
             LocalDate journalDate, String email
     ) {
         User user = userHelper.findUserByEmail(email);
-        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournalByUserAndJournalDate(user, journalDate);
+        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournal(user, journalDate);
         exerciseJournalHelper.isAuthorizedForJournal(email, exerciseJournal.getId());
 
-        List<ExerciseList> journalList = exerciseJournalHelper.findExerciseListsByJournal(exerciseJournal);
+        List<ExerciseList> journalList = exerciseJournalHelper.findExerciseLists(exerciseJournal);
         List<UserJournalDetailExerciseListDto> exerciseListsDto = exerciseJournalHelper.exerciseListsChangeUserJournalDetailsDto(journalList);
         UserJournalDetailDto userJournalDetailDto = new UserJournalDetailDto(exerciseJournal, exerciseListsDto);
 

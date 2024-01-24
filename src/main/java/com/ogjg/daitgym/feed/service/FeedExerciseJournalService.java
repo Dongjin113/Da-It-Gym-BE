@@ -163,9 +163,9 @@ public class FeedExerciseJournalService {
         FeedExerciseJournal feedJournal = feedJournalHelper.findFeedJournalById(feedJournalId);
         Long exerciseJournalId = feedJournal.getExerciseJournal().getId();
         exerciseJournalHelper.checkExerciseJournalDisclosure(exerciseJournalId);
-        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournalById(exerciseJournalId);
+        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournal(exerciseJournalId);
 
-        List<ExerciseList> journalList = exerciseJournalHelper.findExerciseListsByJournal(exerciseJournal);
+        List<ExerciseList> journalList = exerciseJournalHelper.findExerciseLists(exerciseJournal);
         List<UserJournalDetailExerciseListDto> exerciseListsDto = exerciseJournalHelper.exerciseListsChangeUserJournalDetailsDto(journalList);
         UserJournalDetailDto userJournalDetailDto = new UserJournalDetailDto(exerciseJournal, exerciseListsDto);
 

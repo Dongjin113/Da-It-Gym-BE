@@ -54,7 +54,7 @@ class ExerciseTest {
     }
 
     @Test
-    @DisplayName("운동이름으로 운동찾기")
+    @DisplayName("[운동 검색] 운동이름으로 운동찾기")
     @Transactional
     void findExerciseByName() {
         Exercise findExercise = exerciseHelper.findExercise(exerciseName1);
@@ -71,7 +71,7 @@ class ExerciseTest {
     }
 
     @Test
-    @DisplayName("운동ID로 운동찾기")
+    @DisplayName("[운동 검색] 운동ID로 운동찾기")
     @Transactional
     void findExerciseById() {
         Exercise findExercise = exerciseHelper.findExercise(exercise.getId());
@@ -88,7 +88,7 @@ class ExerciseTest {
     }
 
     @Test
-    @DisplayName("운동으로 운동부위 찾기")
+    @DisplayName("[운동부위 검색] 운동으로 운동부위 찾기")
     @Transactional
     void findExerciseByExercisePart() {
         assertThat(exerciseHelper.findExercisePartByExercise(exercise))
@@ -96,7 +96,7 @@ class ExerciseTest {
     }
 
     @Test
-    @DisplayName("운동부위로 운동 찾기")
+    @DisplayName("[부위별 운동 검색]운동부위로 운동 찾기")
     @Transactional
     void findExercisePartByExercise() {
         Exercise exercise1 = exerciseRepository.save(new Exercise("줄넘기"));
@@ -113,7 +113,7 @@ class ExerciseTest {
     }
 
     @Test
-    @DisplayName("운동 부위명으로 부위별 운동정보 가져오기")
+    @DisplayName("[부위별 운동 검색] 운동 부위명으로 부위별 운동정보 가져오기")
     @Transactional
     public void serviceTest() {
         Exercise exercise1 = exerciseRepository.save(

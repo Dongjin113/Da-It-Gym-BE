@@ -38,7 +38,6 @@ public class ExerciseJournalHelper {
     private final ExerciseJournalRepository exerciseJournalRepository;
     private final ExerciseListRepository exerciseListRepository;
     private final ExerciseHistoryRepository exerciseHistoryRepository;
-    private final UserRepository userRepository;
     private final ExerciseHelper exerciseHelper;
     private final RoutineRepository routineRepository;
     private final UserHelper userHelper;
@@ -47,7 +46,7 @@ public class ExerciseJournalHelper {
      * 일지 검색
      * 일지 Id로 일지 존재하는지 확인하기
      */
-    public ExerciseJournal findExerciseJournalById(Long journalId) {
+    public ExerciseJournal findExerciseJournal(Long journalId) {
         return exerciseJournalRepository.findById(journalId)
                 .orElseThrow(NotFoundJournal::new);
     }
@@ -56,7 +55,7 @@ public class ExerciseJournalHelper {
      * 유저와 일지날자로
      * 일지조회
      */
-    public ExerciseJournal findExerciseJournalByUserAndJournalDate(
+    public ExerciseJournal findExerciseJournal(
             User user, LocalDate journalDate
     ) {
         return exerciseJournalRepository.findByJournalDateAndUser(journalDate, user)
@@ -67,7 +66,7 @@ public class ExerciseJournalHelper {
      * 유저와 일지날자로
      * 일지조회존재 확인
      */
-    public boolean existExerciseJournalByUserAndJournalDate(
+    public boolean checkExistExerciseJournal(
             User user, LocalDate journalDate
     ) {
         return exerciseJournalRepository.findByJournalDateAndUser(journalDate, user)
@@ -79,7 +78,7 @@ public class ExerciseJournalHelper {
      * 일지에 접근 권한이 있는지 확인
      */
     public ExerciseJournal isAuthorizedForJournal(String email, Long JournalId) {
-        ExerciseJournal exerciseJournal = findExerciseJournalById(JournalId);
+        ExerciseJournal exerciseJournal = findExerciseJournal(JournalId);
 
         if (!email.equals(exerciseJournal.getUser().getEmail())) {
             throw new UserNotAuthorizedForJournal();
@@ -92,7 +91,7 @@ public class ExerciseJournalHelper {
      * 일지 목록 검색
      * 일지 목록 ID로 일지목록 검색
      */
-    public ExerciseList findExerciseListById(Long exerciseListId) {
+    public ExerciseList findExerciseList(Long exerciseListId) {
         return exerciseListRepository.findById(exerciseListId)
                 .orElseThrow(NotFoundExerciseList::new);
     }
@@ -100,7 +99,7 @@ public class ExerciseJournalHelper {
     /**
      * 운동기록 Id로 운동기록 검색
      */
-    public ExerciseHistory findExerciseHistoryById(Long exerciseHistoryId) {
+    public ExerciseHistory findExerciseHistory(Long exerciseHistoryId) {
         return exerciseHistoryRepository.findById(exerciseHistoryId)
                 .orElseThrow(NotFoundExerciseHistory::new);
     }
@@ -108,26 +107,17 @@ public class ExerciseJournalHelper {
     /**
      * 운동일지로 운동 목록들 찾기
      */
-    public List<ExerciseList> findExerciseListsByJournal(ExerciseJournal exerciseJournal) {
+    public List<ExerciseList> findExerciseLists(ExerciseJournal exerciseJournal) {
         return exerciseListRepository.findByExerciseJournal(exerciseJournal);
     }
 
     /**
      * 운동목록으로 운동기록들 찾기
      */
-    public List<ExerciseHistory> findExerciseHistoriesByExerciseList(ExerciseList exerciseList) {
+    public List<ExerciseHistory> findExerciseHistories(ExerciseList exerciseList) {
         return exerciseHistoryRepository.findAllByExerciseList(exerciseList);
     }
 
-    /**
-     * 같은 날짜에 일지가 존재하는지 확인
-     */
-    public boolean checkForExistJournalSameDate(
-            User user, LocalDate journalDate
-    ) {
-        return exerciseJournalRepository.findByJournalDateAndUser(journalDate, user)
-                .isPresent();
-    }
 
     /**
      * 운동일지의 운동기록들이 모두 완료된 상태인지 확인
@@ -137,23 +127,20 @@ public class ExerciseJournalHelper {
     public void checkAllExerciseHistoriesCompleted(
             ExerciseJournal exerciseJournal
     ) {
-        List<ExerciseList> exerciseLists = findExerciseListsByJournal(exerciseJournal);
-        exerciseLists.forEach(
-                exerciseList -> {
-                    findExerciseHistoriesByExerciseList(exerciseList).forEach(
-                            exerciseHistory -> {
-                                if (!exerciseHistory.isCompleted()) throw new NotCompletedExerciseHistory();
-                            }
-                    );
-                }
-        );
+        List<ExerciseList> exerciseLists = findExerciseLists(exerciseJournal);
+        exerciseLists.forEach(exerciseList -> {
+            findExerciseHistories(exerciseList).forEach(
+                    exerciseHistory -> {
+                        if (!exerciseHistory.isCompleted()) throw new NotCompletedExerciseHistory();
+                    });
+        });
     }
 
     /**
      * 운동일지 공개여부 확인
      */
     public void checkExerciseJournalDisclosure(Long journalId) {
-        if (!findExerciseJournalById(journalId).isVisible())
+        if (!findExerciseJournal(journalId).isVisible())
             throw new UserNotAuthorizedForJournal("공개된 운동일지가 아닙니다");
     }
 
@@ -177,16 +164,23 @@ public class ExerciseJournalHelper {
     public List<UserJournalDetailExerciseHistoryDto> exerciseHistoriesChangeUserJournalDetailsDto(
             ExerciseList exerciseList
     ) {
-        return findExerciseHistoriesByExerciseList(exerciseList).stream()
+        return findExerciseHistories(exerciseList).stream()
                 .map(UserJournalDetailExerciseHistoryDto::new)
                 .toList();
     }
 
+    /**
+     * 유저가 지정한 일자에 일지가 존재한다면 존재하는 일지를 반환
+     * 일지가 존재하지않는다면 새로운 일지를 생성
+     * @param journalDate
+     * @param email
+     * @return
+     */
     public ExerciseJournal getReplicatedExerciseJournal(
             LocalDate journalDate, String email
     ) {
-        if (existExerciseJournalByUserAndJournalDate(userHelper.findUserByEmail(email), journalDate)) {
-            return findExerciseJournalByUserAndJournalDate(userHelper.findUserByEmail(email), journalDate);
+        if (checkExistExerciseJournal(userHelper.findUserByEmail(email), journalDate)) {
+            return findExerciseJournal(userHelper.findUserByEmail(email), journalDate);
         }
         return createJournal(email, journalDate);
     }
@@ -198,7 +192,7 @@ public class ExerciseJournalHelper {
     public ExerciseJournal createJournal(String email, LocalDate journalDate) {
         User user = userHelper.findUserByEmail(email);
 
-        if (checkForExistJournalSameDate(user, journalDate)) {
+        if (checkExistExerciseJournal(user, journalDate)) {
             throw new AlreadyExistExerciseJournal();
         }
 
@@ -240,7 +234,7 @@ public class ExerciseJournalHelper {
             List<ExerciseHistory> replicatedExerciseHistories,
             ExerciseList replicatedExerciseList
     ) {
-        findExerciseHistoriesByExerciseList(originalExerciseList).forEach(exerciseHistory ->
+        findExerciseHistories(originalExerciseList).forEach(exerciseHistory ->
                 replicatedExerciseHistories.add(
                         ExerciseHistory.replicateExerciseHistoryByJournal(replicatedExerciseList, exerciseHistory)
                 )
