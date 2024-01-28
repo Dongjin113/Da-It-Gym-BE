@@ -12,4 +12,7 @@ public class UpdateRestTimeRequest {
 
     private TimeTemplate restTime;
 
+    public UpdateRestTimeRequest(TimeTemplate restTime) {
+        this.restTime = restTime;
+    }
 }

@@ -3,6 +3,7 @@ package com.ogjg.daitgym.domain.feed;
 import com.ogjg.daitgym.domain.BaseEntity;
 import com.ogjg.daitgym.domain.journal.ExerciseJournal;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,5 +33,14 @@ public class FeedExerciseJournal extends BaseEntity {
 
     public FeedExerciseJournal(ExerciseJournal exerciseJournal) {
         this.exerciseJournal = exerciseJournal;
+    }
+
+    @Builder
+    public FeedExerciseJournal(
+            ExerciseJournal exerciseJournal,
+            List<FeedExerciseJournalImage> feedExerciseJournalImages
+    ) {
+        this.exerciseJournal = exerciseJournal;
+        this.feedExerciseJournalImages = feedExerciseJournalImages;
     }
 }

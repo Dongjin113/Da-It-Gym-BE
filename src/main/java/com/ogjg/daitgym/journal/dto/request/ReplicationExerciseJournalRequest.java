@@ -13,4 +13,7 @@ public class ReplicationExerciseJournalRequest {
 
     private LocalDate journalDate;
 
+    public ReplicationExerciseJournalRequest(LocalDate journalDate) {
+        this.journalDate = journalDate;
+    }
 }
