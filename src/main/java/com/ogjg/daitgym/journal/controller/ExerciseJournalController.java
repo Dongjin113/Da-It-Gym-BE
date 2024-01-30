@@ -163,6 +163,23 @@ public class ExerciseJournalController {
     }
 
     /**
+     * 내 운동일지 상세보기 Redis에서 조회
+     */
+    @GetMapping("/{journalDate}/redis")
+    public ApiResponse<UserJournalDetailResponse> userJournalDetailRedis(
+            @AuthenticationPrincipal OAuth2JwtUserDetails userDetails,
+            @PathVariable("journalDate") LocalDate journalDate
+    ) {
+        return new ApiResponse<>(
+                ErrorCode.SUCCESS,
+                exerciseJournalService.userJournalDetailByRedis(
+                        journalDate,
+                        userDetails.getEmail()
+                )
+        );
+    }
+
+    /**
      * 내 운동목록 휴식시간 변경
      */
     @PostMapping("/exercise-list/{exerciseListId}/rest-time")
@@ -188,6 +205,22 @@ public class ExerciseJournalController {
             @RequestBody ExerciseJournalCompleteRequest exerciseJournalCompleteRequest
     ) {
         exerciseJournalService.exerciseJournalComplete(
+                journalId, userDetails.getEmail(), exerciseJournalCompleteRequest
+        );
+
+        return new ApiResponse<>(ErrorCode.SUCCESS);
+    }
+
+    /**
+     * 운동일지 작성완료후 Redis에 저장
+     */
+    @PatchMapping("/{journalId}/complete/redis")
+    public ApiResponse<Void> exerciseJournalCompleteRedis(
+            @AuthenticationPrincipal OAuth2JwtUserDetails userDetails,
+            @PathVariable("journalId") Long journalId,
+            @RequestBody ExerciseJournalCompleteRequest exerciseJournalCompleteRequest
+    ) {
+        exerciseJournalService.exerciseJournalCompleteAndSaveRedis(
                 journalId, userDetails.getEmail(), exerciseJournalCompleteRequest
         );
 
@@ -222,6 +255,24 @@ public class ExerciseJournalController {
     ) {
         exerciseJournalService.replicateExerciseJournal(
                 userDetails.getEmail(), feedJournalId, replicationExerciseJournalRequest
+        );
+
+        return new ApiResponse<>(ErrorCode.SUCCESS);
+    }
+
+    /**
+     * 피드 운동일지에서 다른사람의 일지 Redis에서 가져오기
+     */
+    @PostMapping("/{feedJournalId}/replication/redis")
+    public ApiResponse<Void> replicationExerciseJournalByRedis(
+            @PathVariable("feedJournalId") Long feedJournalId,
+            @RequestBody ReplicationExerciseJournalRequest replicationExerciseJournalRequest,
+            @AuthenticationPrincipal OAuth2JwtUserDetails userDetails
+    ) {
+        exerciseJournalService.replicateExerciseJournalByRedis(
+                userDetails.getEmail(),
+                feedJournalId,
+                replicationExerciseJournalRequest
         );
 
         return new ApiResponse<>(ErrorCode.SUCCESS);

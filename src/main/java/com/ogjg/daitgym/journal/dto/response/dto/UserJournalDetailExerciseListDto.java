@@ -1,7 +1,8 @@
 package com.ogjg.daitgym.journal.dto.response.dto;
 
-import com.ogjg.daitgym.domain.journal.ExerciseList;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogjg.daitgym.domain.TimeTemplate;
+import com.ogjg.daitgym.domain.journal.ExerciseList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import static lombok.AccessLevel.PROTECTED;
 public class UserJournalDetailExerciseListDto {
 
     private Long id;
+    @JsonProperty("spread")
     private final boolean isSpread = false;
     private String name;
     private String part;

@@ -1,5 +1,6 @@
 package com.ogjg.daitgym.journal.dto.response.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogjg.daitgym.domain.journal.ExerciseJournal;
 import com.ogjg.daitgym.domain.TimeTemplate;
 import lombok.Getter;
@@ -17,8 +18,10 @@ public class UserJournalDetailDto {
 
     private Long id;
     private final int order = 1;
+    @JsonProperty("spread")
     private final boolean isSpread = false;
     private LocalDate dayDate;
+    @JsonProperty("completed")
     private boolean isCompleted;
     private TimeTemplate exerciseTime;
     private List<UserJournalDetailExerciseListDto> exercises = new ArrayList<>();

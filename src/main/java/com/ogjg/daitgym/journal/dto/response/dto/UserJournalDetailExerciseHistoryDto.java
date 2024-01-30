@@ -1,5 +1,6 @@
 package com.ogjg.daitgym.journal.dto.response.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogjg.daitgym.domain.journal.ExerciseHistory;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,7 @@ public class UserJournalDetailExerciseHistoryDto {
     private int order;
     private int weights;
     private int counts;
+    @JsonProperty("completed")
     private boolean isCompleted;
 
     public UserJournalDetailExerciseHistoryDto(ExerciseHistory exerciseHistory) {

@@ -18,6 +18,7 @@ import com.ogjg.daitgym.journal.dto.response.dto.UserJournalListDto;
 import com.ogjg.daitgym.journal.repository.exercisehistory.ExerciseHistoryRepository;
 import com.ogjg.daitgym.journal.repository.exerciselist.ExerciseListRepository;
 import com.ogjg.daitgym.journal.repository.journal.ExerciseJournalRepository;
+import com.ogjg.daitgym.journal.repository.redis.RedisRepository;
 import com.ogjg.daitgym.user.service.UserHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class ExerciseJournalService {
     private final FeedJournalHelper feedJournalHelper;
     private final ExerciseJournalHelper exerciseJournalHelper;
     private final UserHelper userHelper;
+    private final RedisRepository redisRepository;
 
     /**
      * 빈 운동일지 생성하기
@@ -79,6 +81,26 @@ public class ExerciseJournalService {
         exerciseJournalHelper.checkAllExerciseHistoriesCompleted(exerciseJournal);
         exerciseJournal.journalComplete(exerciseJournalCompleteRequest);
     }
+
+    /**
+     * 운동일지 완료하기 완료후 Redis에 추가
+     */
+    @Transactional
+    public void exerciseJournalCompleteAndSaveRedis(
+            Long journalId, String email,
+            ExerciseJournalCompleteRequest exerciseJournalCompleteRequest
+    ) {
+        exerciseJournalHelper.isAuthorizedForJournal(email, journalId);
+        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournal(journalId);
+        exerciseJournalHelper.checkAllExerciseHistoriesCompleted(exerciseJournal);
+        exerciseJournal.journalComplete(exerciseJournalCompleteRequest);
+
+        redisRepository.saveJournalDetailsForRedis(
+                journalId,
+                userJournalDetail(exerciseJournal.getJournalDate(), email)
+        );
+    }
+
 
     /**
      * 운동일지 공유하기
@@ -202,6 +224,55 @@ public class ExerciseJournalService {
     }
 
     /**
+     * 다른 사람의 운동일지 가져오기
+     */
+    @Transactional
+    public void replicateExerciseJournalByRedis(
+            String email, Long originalFeedJournalId,
+            ReplicationExerciseJournalRequest replicationExerciseJournalRequest
+    ) {
+
+        ExerciseJournal originalJournal = feedJournalHelper.findExerciseJournalByFeedJournalId(originalFeedJournalId);
+        UserJournalDetailResponse originalRedisJournal = redisRepository.getJournalDetailsByRedis(originalJournal.getId());
+        if (originalRedisJournal == null) {
+            //쿼리를 한방에 가져오기
+            exerciseJournalRepository.fetchCompleteExerciseJournalByJournalId(originalJournal.getId());
+            List<ExerciseList> originalExerciseLists = exerciseJournalHelper.findExerciseLists(originalJournal);
+
+            ExerciseJournal replicatedUserJournal =
+                    exerciseJournalHelper.getReplicatedExerciseJournal(replicationExerciseJournalRequest.getJournalDate(), email);
+
+            exerciseJournalHelper.replicateExerciseListAndHistoryByJournal(replicatedUserJournal, originalExerciseLists);
+            exerciseJournalHelper.saveReplicationHistory(email, originalJournal, replicatedUserJournal);
+        return;
+        }
+
+        ExerciseJournal replicatedExerciseJournal = exerciseJournalHelper.getReplicatedExerciseJournal(replicationExerciseJournalRequest.getJournalDate(), email);
+        List<UserJournalDetailExerciseListDto> exercisesLists = originalRedisJournal.getJournal().getExercises();
+        exercisesLists.forEach(
+                originalExercisesList -> {
+                    ExerciseList exerciseList = exerciseListRepository.save(new ExerciseList(
+                            replicatedExerciseJournal,
+                            exerciseHelper.findExercise(originalExercisesList.getName()),
+                            originalExercisesList.getOrder(),
+                            originalExercisesList.getRestTime()
+                    ));
+
+                    originalExercisesList.getExerciseSets().forEach(
+                            originalExerciseHistory -> exerciseHistoryRepository.save(
+                                    new ExerciseHistory(
+                                            exerciseList,
+                                            originalExerciseHistory.getOrder(),
+                                            originalExerciseHistory.getWeights(),
+                                            originalExerciseHistory.getCounts(),
+                                            false
+                                    ))
+                    );
+                }
+        );
+    }
+
+    /**
      * 루틴에서 일지 가져오기
      */
     @Transactional
@@ -263,8 +334,6 @@ public class ExerciseJournalService {
 
     /**
      * 내 운동일지 상세보기
-     * todo 개별조회로 인한 성능이슈 발생 가능성이 보임 추후 Join을 통해 한번에 가져오도록 개선필요로 보임
-     * => JOIN을 통해 가져오는게 정말 성능적으로 개선이 되는가? 중복된 데이터는?
      */
     @Transactional(readOnly = true)
     public UserJournalDetailResponse userJournalDetail(
@@ -280,4 +349,25 @@ public class ExerciseJournalService {
 
         return new UserJournalDetailResponse(userJournalDetailDto);
     }
+
+    @Transactional(readOnly = true)
+    public UserJournalDetailResponse userJournalDetailByRedis(
+            LocalDate journalDate, String email
+    ) {
+        User user = userHelper.findUserByEmail(email);
+        ExerciseJournal exerciseJournal = exerciseJournalHelper.findExerciseJournal(user, journalDate);
+        exerciseJournalHelper.isAuthorizedForJournal(email, exerciseJournal.getId());
+        UserJournalDetailResponse journalDetailsByRedis = redisRepository.getJournalDetailsByRedis(1L);
+
+        if (journalDetailsByRedis == null) {
+            List<ExerciseList> journalList = exerciseJournalHelper.findExerciseLists(exerciseJournal);
+            List<UserJournalDetailExerciseListDto> exerciseListsDto = exerciseJournalHelper.exerciseListsChangeUserJournalDetailsDto(journalList);
+            UserJournalDetailDto userJournalDetailDto = new UserJournalDetailDto(exerciseJournal, exerciseListsDto);
+            return new UserJournalDetailResponse(userJournalDetailDto);
+        }
+
+        return journalDetailsByRedis;
+    }
+
+
 }
